@@ -1,40 +1,23 @@
 import tkinter as tk
-
+from tkinter import colorchooser
 import BudgetCalcWidgets as tk2
-
 import numpy as np
+import random
 
 root = tk.Tk()
-root["bg"] = "pink"
+root["bg"] = "#c4eb7f"
 root.geometry("500x500")
 
-myParams:dict = {
-    "master" : root,
-    "kwargs": {"bg":"red", "font":("Georgia", 20), "borderwidth":3, 
-               "relief":tk.GROOVE, "width":7, "height":2},
-    "make_numeric":True,
-    "focusColor": "orange"
-}
+scrollBar = tk2.ScrollingFrame(
+    root,
+    kwargs={"bg":"orange"},
+    scrollAxis="Y"
+)
 
-myWidgets:np.ndarray[tk.Label] = np.full((5, 5), None)
-
-
-
-for i in range(5):
-    for j in range(5):
-        myWidgets[i][j] = tk2.Mutable_Label(**myParams)
-        myWidgets[i][j].grid(row=i, column=j)
-
-root.update()
-root.update_idletasks()
-
-print(myWidgets[0][0].winfo_width())
-
-
-
-
-
+scrollBar.place(relx=0, rely=0, relwidth=1, relheight=0.5, anchor=tk.NW)
 
 root.mainloop()
 print(1)
+
+
 

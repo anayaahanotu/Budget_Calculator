@@ -15,13 +15,13 @@ import numpy as np
 import pandas as pd
 
 #import the different parts of the program
-import BudgetCalcWidgets as widget
+import BudgetCalcWidgets as bcw
 
 
 #create the window
 root = tk.Tk()
 root.geometry('1200x800') #set size of window
-root['bg'] = '#FDB0C0' #makes for a soft, neutral blue background
+root['bg'] = '#f9afc0' #makes for a soft, neutral pink background
 root.title('Budget Calculator')
 
 
@@ -39,13 +39,24 @@ class Budget_Calculator(tk.Frame):
         tk.Frame.__init__(self, master, bg=master['bg'],) 
         self.place(relx=0, rely=0, relwidth=1, relheight=1)
 
+        self.master.update()
+        self.master.update_idletasks()
+
+        if "#" not in self["bg"]:
+            self.color:tuple = bcw.rgb_to_hex(tuple(map(
+                lambda x: x // 256, root.winfo_rgb(self["bg"])
+            )))
+        else:
+            self.color = self["bg"]
+        
+
         #title of project
         title:tk.Label = tk.Label( 
             root,
             bg=root['bg'],
             fg='white',
             text='Budget Calculator',
-            font=('Playerite US', 30, 'bold'),
+            font=('Sauber Script', 30, 'bold'),
         )
 
         #set relative position of all the widgets, instead of a fixed position
@@ -60,13 +71,20 @@ class Budget_Calculator(tk.Frame):
         #give selected and unselected tabs two distinct colors
         #selected tabs are a few shaeds darker than unselected tabs
 
-        self.__unselectedColor:list = (list(tk2.hex_to_rgb(self['bg'])), self['bg'])
+        #save unselected color as RGB and hex, same with selected Color
+        self.__unselectedColor:list = [bcw.hex_to_rgb(self.color), self.color]
         self.selectedColor = [
-             tuple(value - 50 for value in self.__unselectedColor[0]),           
+             list(value - 50 for value in self.__unselectedColor[0]),           
         ]
 
+        for index, value in enumerate(self.selectedColor[0]):
+            if value < 0:
+                self.selectedColor[0][index] = 0
 
-        self.selectedColor.append(tk2._from_rgb(self.selectedColor[0]))
+        self.selectedColor[0] = tuple(self.selectedColor[0])
+
+        self.selectedColor.append(bcw.rgb_to_hex(self.selectedColor[0]))
+
 
         self.__MODES:list[str] = [
             'income and expenses',
@@ -81,7 +99,7 @@ class Budget_Calculator(tk.Frame):
 
         #keep the tabs in a narrow frame about right next to each other
 
-        tabFrame:tk.Frame = tk.Frame(self, bg=self['bg'])
+        tabFrame:tk.Frame = tk.Frame(self, bg=self.color)
 
 
         tabFrame.place(relx=0, rely=0.08, relwidth=1) 
@@ -98,7 +116,7 @@ class Budget_Calculator(tk.Frame):
                 tabFrame,
                 font=("Georgia", 24),
                 fg="White",
-                bg=self.__unselectedColor[1],
+                bg= self.__unselectedColor[1],
                 text=label.capitalize(),
             )
 
@@ -180,8 +198,8 @@ class Budget_Calculator(tk.Frame):
 
  
 
+if __name__ == "__main__":
+    a = Budget_Calculator(root)
 
-a = Budget_Calculator(root)
-
-root.mainloop() #show the window
+    root.mainloop() #show the window
 
