@@ -31,7 +31,7 @@ def hex_to_rgb(hexCode:str) -> tuple[int, int, int]:
         #go through each element in current value using enumerate
         #enumerate -> item (index 1) and index in currentValue (index 0)
         #use the formula: 
-        #   16 ^ ((length of hex value) - current index)
+        #16 ^ ((length of hex value) - current index)
         #   * the hexidecimal's decimal equivalent (found based on its index 
         #   in hexValues)
         currentRGB = sum(list(map(
@@ -180,7 +180,7 @@ class ScrollingFrame(Frame):
     Create a scrollable window
     """
     def __init__(self, master:Tk|Frame, kwargs:dict|None = None,
-                    scrollAxis:str = "X"):
+                    scrollAxis:str = "Y"):
         """
         ScrollingFrame(self, master, kwargs, scrollReigon)
         master: tkinter.Tk|tkinter.Frame: parent widget ScrollingFrame
@@ -202,17 +202,114 @@ class ScrollingFrame(Frame):
         self.scrollCanvas:Canvas = Canvas(self, bg=self["bg"])
         #initialize length of scrollbars to be the same as the number of axis
         #to scroll through
-        self.scrollbars:np.ndarray[ttk.Scrollbar] = np.full((len(scrollAxis)),
-                                                            None
-                                                    )
+        self.scrollbars:np.ndarray[ttk.Scrollbar] = np.full(
+            (2),
+            None
+        )
+        self.change_scroll_axis(self.scrollAxis)
 
-        #declare contentFrame to hold the content
-        self.contentFrame:Frame
+        self.scrollCanvas.bind(
+            "<Configure>", 
+            lambda e: self.scrollCanvas.configure(
+                scrollregion=self.scrollCanvas.bbox("all")
+            )
+        )
+
+        #this frame holds the contents of the scrolling bar
+        self.displayFrame:Frame = Frame(self.scrollCanvas, bg=self["bg"])
+
+        self.scrollCanvas.create_window(
+            (0, 0), 
+            window=self.displayFrame, 
+            anchor = "nw"
+        )
+
+        import random
+
+        self.scrollCanvas.bind(
+            "<Enter>",
+            lambda e: [
+                self.scrollCanvas.focus_set(), 
+                self.scrollCanvas.bind_all(
+                    "<MouseWheel>",
+                    self.on_mouse_wheel,
+                    "+"
+                )
+            ]     
+        )
+
+        self.scrollCanvas.bind(
+            "<Leave>",
+            lambda e: self.scrollCanvas.unbind_all("<MouseWheel>"),
+            "+"
+        )
+
+        self.update_scrollbar()
+
+    def on_mouse_wheel(self, e:Event):
+        """
+        ScrollingFrame.on_mouse_wheel(e)
+        e: Tkinter.Event
+        Scrolls the canvas: vertically if there is a vertical scrollbar.
+        horizontally if the scrollbar is only horizontal
+        """
+
+        # method from: 
+        # https://stackoverflow.com/questions/17355902/tkinter-binding-mousewheel-to-scrollbar
+
+        if self.scrollAxis == "X":
+            self.scrollCanvas.xview_scroll(e.delta, "units")
+
+        elif "Y" in self.scrollAxis:
+            self.scrollCanvas.yview_scroll(-1 * e.delta, "units")
+            self.update_idletasks()
+
+    def change_scroll_axis(self, direction:str) -> None:
+        """
+        ScrollingFrame.change_scroll_axis(direction)
+        direction: str: axis on which to scroll:
+            - 'X': scroll along x-axis
+            - 'Y': scroll along y-axis
+            - "XY": scroll along x-axis and y-axis
+        
+        """
+
+        self.scrollAxis = direction.upper()
+
+        #destroy existing scrollbars
+        if self.scrollbars[0]: self.scrollbars[0].destroy()
+        if self.scrollbars[1]: self.scrollbars[1].destroy()
 
         #if Y axis is chosen, create a vertical scrolling bar
-        if 'Y' in scrollAxis:
-            #pack the scrollCanvas to the left side of self
+        if 'Y' == self.scrollAxis:
+
+            self.scrollbars[0] = ttk.Scrollbar(
+                self, 
+                orient="vertical",
+                command=self.scrollCanvas.yview,
+            )
+            self.scrollbars[0].pack(side=RIGHT, fill="y")
+
+            #configure the canvas to be connected to the scrollbar
+            self.scrollCanvas.configure(yscrollcommand=self.scrollbars[0].set)
             self.scrollCanvas.pack(side=LEFT, fill=BOTH, expand=1)
+
+        #else if X axis is chosen, create a vertical scrolling bar
+        elif 'X' == self.scrollAxis:
+            
+            self.scrollbars[0] = ttk.Scrollbar(
+                self, 
+                orient="horizontal",
+                command=self.scrollCanvas.xview,
+            )
+            self.scrollbars[0].pack(side=BOTTOM, fill="x")
+            self.scrollCanvas.pack(side=TOP, fill=BOTH, expand=1)
+
+            self.scrollCanvas.configure(xscrollcommand=self.scrollbars[0].set)
+
+        #else if X and Y axis is chosen, create a horizontal and vertical
+        #scrolling bar
+        elif self.scrollAxis == 'XY':
             #initialize a vertical scrollbar
             self.scrollbars[0] = ttk.Scrollbar(
                 self, 
@@ -225,23 +322,117 @@ class ScrollingFrame(Frame):
             self.scrollCanvas.configure(yscrollcommand=self.scrollbars[0].set)
 
 
-    def change_scroll_axis(direection:str) -> None:
-        """
-        ScrollingFrame.change_scroll_axis(direction)
-        direction: str: axis on which to scroll:
-            - 'X': scroll along x-axis
-            - 'Y': scroll along y-axis
-            - "XY": scroll along x-axis and y-axis
-        
-        """
-        pass
+            #initialize a vertical scrollbar
+            self.scrollbars[1] = ttk.Scrollbar(
+                self, 
+                orient="horizontal",
+                command=self.scrollCanvas.xview,
+            )
+            self.scrollbars[1].pack(side=BOTTOM, fill="x")
+
+            #configure the canvas to be connected to the scrollbar
+            self.scrollCanvas.configure(xscrollcommand=self.scrollbars[1].set)
+
+            self.scrollCanvas.pack(side=LEFT, fill=BOTH, expand=1)
+
     
-    @property
-    def contentFrame(self) -> Frame:
-        pass
     def update_scrollbar(self) -> None:
-        pass
-    def setFocus(self, e) -> None:
-        pass
-    def removeFocus(self, e) -> None:
-        pass
+        """
+        ScrollingFrame.update_scrollbar()
+        Updates the contents and attributes of the canvas to Tkinter and the
+        Frame 
+        """
+        self.update()
+
+
+        self.scrollCanvas.configure(scrollregion=self.scrollCanvas.bbox("all"))
+
+        self.update()
+
+    def add_item(self, obj, 
+            args:tuple|None = None, 
+            kwargs:dict|None = None,
+            row:int = 0,
+            column:int = 0
+    ) -> object:
+        """
+        ScrollingFrame.add_item(self, obj, args, kwargs, row, column)
+        obj: Tkinter widget: class type object to put into the scrollFrame
+        args: tuple: list of arguments for the object
+        kwargs: list of keyword arguments for the object
+        row: int: grid row number to place the element
+        column: int: grid column number to place the object
+
+        returns the item added to the dataframe
+        WHEN DELETING THE OBJECT, CALL update_scrollbar()
+        """
+
+
+        if not args: args = ()
+        if not kwargs: kwargs = {}
+        
+        newObject = obj(self.displayFrame, *args, **kwargs)
+
+        newObject.grid(row=row, column=column)
+
+        self.update_scrollbar()
+
+        #returns the object so that the programmer can modify/delete the object
+        #later
+        return newObject
+
+    
+
+def main():
+    import random
+    import numpy as np
+
+    root = Tk()
+    root.geometry("500x500")
+    root["bg"] = rgb_to_hex(
+        (
+            random.randrange(127, 256),
+            random.randrange(127, 256),
+            random.randrange(127, 256)
+        )
+    )
+
+    scrollFrame:ScrollingFrame = ScrollingFrame(
+        root,
+        kwargs={"bg":root["bg"]}, 
+        scrollAxis="XY"
+    )
+
+    scrollFrame.place(x=0, y=0, relwidth = 0.25, relheight=1)
+
+
+    arrayOfLabels = np.full((50, 5), None)
+
+    for i in range(50):
+        for j in range(5):
+            arrayOfLabels[i][j] = scrollFrame.add_item(
+                obj=Label,
+                kwargs={
+                    "bg":"white", 
+                    "fg":"black", 
+                    "font": ("Georgia", 12),
+                    "width":10, 
+                    "height":5,
+                    "text":f"Button {random.randrange(1, 3000)}"
+                },
+                row = i, 
+                column= j
+            )
+
+    print(1)
+
+
+
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
+
+class DataList (Frame):
+    pass

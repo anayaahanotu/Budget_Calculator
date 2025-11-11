@@ -18,7 +18,6 @@ from datetime import datetime as dt
 import typing as t
 from enum import Enum
 
-
 #declare charts enum
 class Charts(Enum):
     BAR_CHART = "BAR CHART"
@@ -439,7 +438,7 @@ class Graphing(tk.Frame):
                         bar.set_facecolor(self.__graphAtts["fillColor"])
 
 
-            #else; they want a normal bar graph
+            #else user does not want a histogram; they want a normal bar graph
             else:
                 # draw the bar graph
                 self.ax.bar(
@@ -502,7 +501,7 @@ class Graphing(tk.Frame):
             #reduce clutter of x axis
             self.fig.autofmt_xdate()
 
-            #graph the scatter plot
+            #graph the line plot
             self.ax.plot(
                 self.xData,
                 self.yData,
@@ -541,7 +540,8 @@ class Graphing(tk.Frame):
             self.__clean_data()
 
             #if the user inputted a list, color the pie chart based on
-            # developer input.
+            # developer input, make the colors used in the part chart based off 
+            # of what was passed by the developer
             if (isinstance(self.__graphAtts["fillColor"], t.Iterable)
                 and not isinstance(self.__graphAtts["fillColor"], str)):
 
@@ -758,7 +758,7 @@ def main():
 
     root.geometry("500x500")
 
-    x = np.arange(-10, 10, 0.01)
+    x = np.arange(1, 100, 0.01)
 
     y = []
 
@@ -766,7 +766,7 @@ def main():
 
     for a in x:
         try:
-            value = a**2 + math.sin(a)
+            value = ((-1)**a)/(math.sqrt(a+1))
 
             if (-50 <= value <= 50):
                 y.append(value)
